@@ -1,0 +1,25 @@
+{
+    "deploy": [
+        "../deploy.md"
+    ],
+    "docs": "https://vekatech.com/VK-RA6M3_docs/brochures/VK-RA6M3%20Flyer%20R2.pdf",
+    "features": [
+    "UART",
+    "SPI",
+    "I2C",
+    "ADC",
+    "DAC",
+        "PWM",
+        "SDCard",
+        "Ethernet"
+    ],
+    "id": "VK-RA6M3",
+    "images": [
+        "VK-RA6M3.jpg"
+    ],
+    "mcu": "RA6M3",
+    "product": "VK-RA6M3",
+    "thumbnail": "",
+    "url": "https://vekatech.com",
+    "vendor": "Vekatech"
+}

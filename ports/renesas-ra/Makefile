@@ -25,6 +25,12 @@ include $(BOARD_DIR)/mpconfigboard.mk
 
 USE_FSP_LPM ?= 1
 USE_FSP_QSPI ?= 0
+USE_FSP_SDHI ?= 0
+USE_FSP_ETH ?= 0
+USE_FSP_SCE ?= 0
+USE_FSP_LCD ?= 0
+USE_FSP_CAM ?= 0
+#USE_FSP_CAN ?= 0
 FSP_BOARD_NAME ?= $(shell echo $(BOARD) | tr '[:upper:]' '[:lower:]')
 
 # Files that are generated and needed before the QSTR build.
@@ -68,9 +74,22 @@ INC += -I$(TOP)/$(HAL_DIR)
 INC += -I$(TOP)/$(HAL_DIR)/ra/fsp/inc
 INC += -I$(TOP)/$(HAL_DIR)/ra/fsp/inc/api
 INC += -I$(TOP)/$(HAL_DIR)/ra/fsp/inc/instances
+ifeq ($(CMSIS_MCU),RA6M3)
+INC += -I$(TOP)/$(HAL_DIR)/ra/fsp/src/r_sce/crypto_procedures/src/sce7/plainkey/private/inc
+INC += -I$(TOP)/$(HAL_DIR)/ra/fsp/src/r_sce/crypto_procedures/src/sce7/plainkey/public/inc
+INC += -I$(TOP)/$(HAL_DIR)/ra/fsp/src/r_sce/crypto_procedures/src/sce7/plainkey/primitive
+INC += -I$(TOP)/$(HAL_DIR)/ra/fsp/src/r_sce/common
+INC += -I$(TOP)/$(HAL_DIR)/ra/fsp/src/r_sce
+endif
+ifeq ($(CMSIS_MCU),RA6M5)
+INC += -I$(TOP)/$(HAL_DIR)/ra/fsp/src/r_sce_protected/crypto_procedures_protected/src/sce7/inc/api
+INC += -I$(TOP)/$(HAL_DIR)/ra/fsp/src/r_sce_protected/crypto_procedures_protected/src/sce7/inc/instances
+INC += -I$(TOP)/$(HAL_DIR)/ra/fsp/src/r_sce_protected/crypto_procedures_protected/src/sce7/private/inc
+endif
 INC += -I$(TOP)/$(HAL_DIR)/ra/fsp/src/bsp/cmsis/Device/RENESAS/Include
-#INC += -Ilwip_inc
-ifeq ($(CMSIS_MCU),$(filter $(CMSIS_MCU),RA4M1 RA4W1 RA6M1 RA6M2 RA6M5))
+INC += -Ilwip_inc
+INC += -Imbedtls
+ifeq ($(CMSIS_MCU),$(filter $(CMSIS_MCU),RA4M1 RA4W1 RA6M1 RA6M2 RA6M3 RA6M5))
 INC += -Ira
 endif
 INC += -I$(BOARD_DIR)/ra_gen
@@ -104,6 +123,7 @@ CFLAGS_MCU_RA4M1 = $(CFLAGS_CORTEX_M) -mtune=cortex-m4 -mcpu=cortex-m4
 CFLAGS_MCU_RA4W1 = $(CFLAGS_CORTEX_M) -mtune=cortex-m4 -mcpu=cortex-m4
 CFLAGS_MCU_RA6M1 = $(CFLAGS_CORTEX_M) -mtune=cortex-m4 -mcpu=cortex-m4
 CFLAGS_MCU_RA6M2 = $(CFLAGS_CORTEX_M) -mtune=cortex-m4 -mcpu=cortex-m4
+CFLAGS_MCU_RA6M3 = $(CFLAGS_CORTEX_M) -mtune=cortex-m4 -mcpu=cortex-m4
 CFLAGS_MCU_RA6M5 = $(CFLAGS_CORTEX_M) -mtune=cortex-m33 -mcpu=cortex-m33
 
 ASFLAGS += $(CFLAGS_CORTEX_M) -mcpu=cortex-$(MCU_SERIES)
@@ -279,6 +299,7 @@ SRC_C += \
 	ra_hal.c \
 	ra_it.c \
 	mphalport.c \
+	mpnetworkport.c \
 	mpthreadport.c \
 	irq.c \
 	pendsv.c \
@@ -300,7 +321,12 @@ SRC_C += \
 	machine_pin.c \
 	machine_rtc.c \
 	machine_sdcard.c \
+	machine_lcd.c \
+	machine_cam.c \
 	modmachine.c \
+	network_lan.c \
+	eth.c \
+	rng.c \
 	extint.c \
 	usrsw.c \
 	flash.c \
@@ -356,6 +382,74 @@ HAL_SRC_C += $(HAL_DIR)/ra/fsp/src/r_sdhi/r_sdhi.c \
 	$(HAL_DIR)/ra/fsp/src/r_dtc/r_dtc.c
 endif
 
+ifeq ($(USE_FSP_ETH), 1)
+CFLAGS += -DUSE_FSP_ETH
+HAL_SRC_C += $(HAL_DIR)/ra/fsp/src/r_ether_phy/targets/ICS1894/r_ether_phy_target_ics1894.c \
+	$(HAL_DIR)/ra/fsp/src/r_ether_phy/r_ether_phy.c \
+	$(HAL_DIR)/ra/fsp/src/r_ether/r_ether.c
+endif
+
+ifeq ($(USE_FSP_SCE), 1)
+CFLAGS += -DUSE_FSP_SCE
+ifeq ($(CMSIS_MCU),RA6M3)
+HAL_SRC_C += $(HAL_DIR)/ra/fsp/src/r_sce/crypto_procedures/src/sce7/plainkey/adaptors/r_sce_adapt.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce/crypto_procedures/src/sce7/plainkey/primitive/hw_sce_p_p00.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce/crypto_procedures/src/sce7/plainkey/primitive/hw_sce_p_p01.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce/crypto_procedures/src/sce7/plainkey/primitive/hw_sce_p_p02.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce/crypto_procedures/src/sce7/plainkey/primitive/hw_sce_p_p20.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce/crypto_procedures/src/sce7/plainkey/primitive/hw_sce_p_func050.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce/crypto_procedures/src/sce7/plainkey/primitive/hw_sce_p_func051.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce/crypto_procedures/src/sce7/plainkey/primitive/hw_sce_p_func052.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce/crypto_procedures/src/sce7/plainkey/primitive/hw_sce_p_func053.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce/crypto_procedures/src/sce7/plainkey/primitive/hw_sce_p_func054.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce/crypto_procedures/src/sce7/plainkey/primitive/hw_sce_p_func100.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce/crypto_procedures/src/sce7/plainkey/primitive/hw_sce_p_func101.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce/crypto_procedures/src/sce7/plainkey/primitive/hw_sce_p_func102.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce/crypto_procedures/src/sce7/plainkey/primitive/hw_sce_p_func103.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce/crypto_procedures/src/sce7/plainkey/primitive/hw_sce_p_subprc01.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce/crypto_procedures/src/sce7/plainkey/primitive/hw_sce_p_subprc02.c
+endif
+ifeq ($(CMSIS_MCU),RA6M5)
+HAL_SRC_C += $(HAL_DIR)/ra/fsp/src/r_sce_protected/crypto_procedures_protected/src/sce9/public/r_sce.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce_protected/crypto_procedures_protected/src/sce9/public/r_sce_aes.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce_protected/crypto_procedures_protected/src/sce9/public/r_sce_sha.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce_protected/crypto_procedures_protected/src/sce9/public/r_sce_ecc.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce_protected/crypto_procedures_protected/src/sce9/private/r_sce_private.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce_protected/crypto_procedures_protected/src/sce9/primitive/r_sce_p00.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce_protected/crypto_procedures_protected/src/sce9/primitive/r_sce_p20.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce_protected/crypto_procedures_protected/src/sce9/primitive/r_sce_p26.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce_protected/crypto_procedures_protected/src/sce9/primitive/r_sce_p40.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce_protected/crypto_procedures_protected/src/sce9/primitive/r_sce_p81.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce_protected/crypto_procedures_protected/src/sce9/primitive/r_sce_p82.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce_protected/crypto_procedures_protected/src/sce9/primitive/r_sce_p92.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce_protected/crypto_procedures_protected/src/sce9/primitive/r_sce_func040.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce_protected/crypto_procedures_protected/src/sce9/primitive/r_sce_func048.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce_protected/crypto_procedures_protected/src/sce9/primitive/r_sce_func050.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce_protected/crypto_procedures_protected/src/sce9/primitive/r_sce_func051.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce_protected/crypto_procedures_protected/src/sce9/primitive/r_sce_func052.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce_protected/crypto_procedures_protected/src/sce9/primitive/r_sce_func053.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce_protected/crypto_procedures_protected/src/sce9/primitive/r_sce_func054.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce_protected/crypto_procedures_protected/src/sce9/primitive/r_sce_func100.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce_protected/crypto_procedures_protected/src/sce9/primitive/r_sce_func101.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce_protected/crypto_procedures_protected/src/sce9/primitive/r_sce_func102.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce_protected/crypto_procedures_protected/src/sce9/primitive/r_sce_func103.c \
+	$(HAL_DIR)/ra/fsp/src/r_sce_protected/crypto_procedures_protected/src/sce9/primitive/r_sce_subprc01.c
+endif
+endif
+
+ifeq ($(USE_FSP_LCD), 1)
+CFLAGS += -DUSE_FSP_LCD
+HAL_SRC_C += $(HAL_DIR)/ra/fsp/src/r_glcdc/r_glcdc.c \
+	$(HAL_DIR)/ra/fsp/src/r_sci_i2c/r_sci_i2c.c \
+	$(HAL_DIR)/ra/fsp/src/r_icu/r_icu.c
+endif
+
+ifeq ($(USE_FSP_CAM), 1)
+CFLAGS += -DUSE_FSP_CAM
+HAL_SRC_C += $(HAL_DIR)/ra/fsp/src/r_pdc/r_pdc.c \
+	$(HAL_DIR)/ra/fsp/src/r_jpeg/r_jpeg.c
+endif
+
 ifeq ($(USE_FSP_LPM), 1)
 CFLAGS += -DUSE_FSP_LPM
 HAL_SRC_C += $(HAL_DIR)/ra/fsp/src/r_lpm/r_lpm.c
@@ -368,14 +462,14 @@ HAL_SRC_C += $(HAL_DIR)/ra/fsp/src/r_flash_lp/r_flash_lp.c
 endif
 endif
 
-ifeq ($(CMSIS_MCU),$(filter $(CMSIS_MCU),RA6M1 RA6M2 RA6M5))
+ifeq ($(CMSIS_MCU),$(filter $(CMSIS_MCU),RA6M1 RA6M2 RA6M3 RA6M5))
 ifeq ($(USE_FSP_FLASH), 1)
 CFLAGS += -DUSE_FSP_FLASH
 HAL_SRC_C += $(HAL_DIR)/ra/fsp/src/r_flash_hp/r_flash_hp.c
 endif
 endif
 
-ifeq ($(CMSIS_MCU),$(filter $(CMSIS_MCU),RA4M1 RA4W1 RA6M1 RA6M2 RA6M5))
+ifeq ($(CMSIS_MCU),$(filter $(CMSIS_MCU),RA4M1 RA4W1 RA6M1 RA6M2 RA6M3 RA6M5))
 HAL_SRC_C += $(addprefix ra/,\
 	ra_adc.c \
 	ra_dac.c \
@@ -392,7 +486,10 @@ HAL_SRC_C += $(addprefix ra/,\
 	ra_gpt.c \
 	ra_utils.c \
 	)
+endif
 
+ifeq ($(MICROPY_SSL_MBEDTLS),1)
+LIB_SRC_C += mbedtls/mbedtls_port.c
 endif
 
 OBJ += $(PY_O)
@@ -484,6 +581,9 @@ AF_FILE = boards/ra6m1_af.csv
 endif
 ifeq ($(CMSIS_MCU),$(filter $(CMSIS_MCU),RA6M2))
 AF_FILE = boards/ra6m2_af.csv
+endif
+ifeq ($(CMSIS_MCU),$(filter $(CMSIS_MCU),RA6M3))
+AF_FILE = boards/ra6m3_af.csv
 endif
 ifeq ($(CMSIS_MCU),$(filter $(CMSIS_MCU),RA6M5))
 AF_FILE = boards/ra6m5_af.csv
