@@ -27,7 +27,11 @@ extern "C" {
 #endif
 #define BSP_CFG_MCU_VCC_MV (3300)
 #define BSP_CFG_STACK_MAIN_BYTES (0x4000)
+#if defined(MICROPY_PY_LVGL) && (MICROPY_PY_LVGL == 1)
+#define BSP_CFG_HEAP_BYTES (0x35800)
+#else
 #define BSP_CFG_HEAP_BYTES (0xA000)
+#endif
 #define BSP_CFG_PARAM_CHECKING_ENABLE (0)
 #define BSP_CFG_ASSERT (0)
 #define BSP_CFG_ERROR_LOG (0)

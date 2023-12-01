@@ -202,6 +202,13 @@
 
 #define MP_STATE_PORT MP_STATE_VM
 
+#if MICROPY_PY_LVGL
+#define MICROPY_PORT_ROOT_POINTERS \
+    LV_ROOTS \
+    void *mp_lv_user_data; \
+
+#endif
+
 #if MICROPY_PY_NETWORK_ESP_HOSTED
 extern const struct _mp_obj_type_t mod_network_esp_hosted_type;
 #define MICROPY_HW_NIC_IF_HOSTED   { MP_ROM_QSTR(MP_QSTR_WLAN), MP_ROM_PTR(&mod_network_esp_hosted_type) },
@@ -227,6 +234,19 @@ extern const struct _mp_obj_type_t network_lan_type;
 #endif
 #ifndef MICROPY_HW_USB_PID
 #define MICROPY_HW_USB_PID  (0x9800)
+#endif
+
+#if MICROPY_PY_LVGL
+// #include "lib/lv_bindings/lvgl/src/misc/lv_gc.h"
+#define MICROPY_PY_LVGL_DEF \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_lvgl), (mp_obj_t)&mp_module_lvgl }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_lvindev), (mp_obj_t)&mp_module_lvindev}, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_SDL), (mp_obj_t)&mp_module_SDL }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_fb), (mp_obj_t)&mp_module_fb }, \
+    { MP_OBJ_NEW_QSTR(MP_QSTR_lodepng), (mp_obj_t)&mp_module_lodepng },
+#else
+#define LV_ROOTS
+#define MICROPY_PY_LVGL_DEF
 #endif
 
 // type definitions for the specific machine

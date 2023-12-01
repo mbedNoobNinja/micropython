@@ -59,3 +59,7 @@
 [submodule "lib/protobuf-c"]
 	path = lib/protobuf-c
 	url = https://github.com/protobuf-c/protobuf-c.git
+[submodule "lib/lv_bindings"]
+	path = lib/lv_bindings
+	url = https://github.com/Vekatech/lv_binding_micropython.git
+	branch = sls_lvgl_v8.3.6
