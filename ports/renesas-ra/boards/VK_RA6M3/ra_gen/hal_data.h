@@ -95,7 +95,11 @@ void cam_ISR(pdc_callback_args_t *p_args);
 #endif
 #if PDC_ON_PDC_BUFFER_USED_g_cam0
 /** Buffer where captured image will be stored for application usage */
+#if defined(MICROPY_PY_LVGL) && (MICROPY_PY_LVGL == 1)
+extern uint8_t g_cam_buffer[1][16 * 16 * 2];
+#else
 extern uint8_t g_cam_buffer[1][320 * 240 * 2];
+#endif
 #endif
 /* Transfer on DTC Instance. */
 extern const transfer_instance_t g_transfer4;

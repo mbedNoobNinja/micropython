@@ -290,7 +290,11 @@ void g_cam0_transfer_callback(dmac_callback_args_t *p_args) {
 #endif
 #undef RA_NOT_DEFINED
 #if PDC_ON_PDC_BUFFER_USED_g_cam0
+#if defined(MICROPY_PY_LVGL) && (MICROPY_PY_LVGL == 1)
+uint8_t g_cam_buffer[1][16 * 16 * 2] BSP_ALIGN_VARIABLE(32) BSP_PLACE_IN_SECTION(".noinit");
+#else
 uint8_t g_cam_buffer[1][320 * 240 * 2] BSP_ALIGN_VARIABLE(32) BSP_PLACE_IN_SECTION(".noinit");
+#endif
 #endif
 pdc_instance_ctrl_t g_cam0_ctrl;
 pdc_cfg_t g_cam0_cfg = { .bytes_per_pixel = 2, .clock_division =
@@ -304,7 +308,11 @@ pdc_cfg_t g_cam0_cfg = { .bytes_per_pixel = 2, .clock_division =
                          .p_context = &NULL,
                          #endif
                          .p_extend = NULL, .p_lower_lvl_transfer = &g_transfer5,
+                         #if defined(MICROPY_PY_LVGL) && (MICROPY_PY_LVGL == 1)
+                         .x_capture_pixels = 16, .y_capture_pixels = 16,
+                         #else
                          .x_capture_pixels = 320, .y_capture_pixels = 240,
+                         #endif
                          .x_capture_start_pixel = 192, .y_capture_start_pixel = 26, .pdc_ipl =
                              (1), .transfer_req_ipl = (1),
                          #if defined(VECTOR_NUMBER_PDC_INT)

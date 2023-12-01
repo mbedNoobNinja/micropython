@@ -38,6 +38,35 @@ QSTR_GENERATED_HEADERS = $(BUILD)/pins_qstr.h
 QSTR_DEFS += qstrdefsport.h $(QSTR_GENERATED_HEADERS)
 QSTR_GLOBAL_DEPENDENCIES += mpconfigboard_common.h $(BOARD_DIR)/mpconfigboard.h $(QSTR_GENERATED_HEADERS)
 
+#LittlevGL
+ifeq ($(MICROPY_PY_LVGL),1)
+GIT_SUBMODULES += lib/lv_bindings
+LV_CFLAGS = -DMICROPY_PY_LVGL -DLV_COLOR_DEPTH=16 -DLV_USE_TINY_TTF=0
+#-DCONFIG_LV_MEM_CUSTOM=0
+LVGL_BINDING_DIR = $(TOP)/lib/lv_bindings
+LVGL_DIR = $(LVGL_BINDING_DIR)/lvgl
+LVGL_GENERIC_DRV_DIR = $(LVGL_BINDING_DIR)/driver/generic
+INC += -I$(LVGL_BINDING_DIR)
+ALL_LVGL_SRC = $(shell find $(LVGL_DIR) -type f -name '*.h') $(LVGL_BINDING_DIR)/lv_conf.h
+SRC_THIRDPARTY_C += $(subst $(TOP)/,,$(shell find $(LVGL_DIR)/src $(LVGL_GENERIC_DRV_DIR) -type f -name "*.c"))
+LVGL_PP = $(BUILD)/lvgl/lvgl.pp.c
+LVGL_MPY = $(BUILD)/lvgl/lv_mpy.c
+LVGL_MPY_METADATA = $(BUILD)/lvgl/lv_mpy.json
+CFLAGS_EXTMOD += $(LV_CFLAGS)
+SRC_EXTMOD_C += $(LVGL_MPY)
+#$(LVGL_DIR)/examples
+#CFLAGS_EXTMOD += -Wno-unused-function
+$(LVGL_MPY): $(ALL_LVGL_SRC) $(LVGL_BINDING_DIR)/gen/gen_mpy.py
+	$(ECHO) "LVGL-GEN $@"
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(CPP) $(CFLAGS_EXTMOD) -DPYCPARSER -x c -I$(LVGL_BINDING_DIR)/pycparser/utils/fake_libc_include $(INC) $(LVGL_DIR)/lvgl.h > $(LVGL_PP)
+	$(Q)$(PYTHON) $(LVGL_BINDING_DIR)/gen/gen_mpy.py -M lvgl -MP lv -MD $(LVGL_MPY_METADATA) -E $(LVGL_PP) $(LVGL_DIR)/lvgl.h > $@
+
+LVGL_patch:
+	$(ECHO) "patch LVGL..."
+	git -C $(LVGL_BINDING_DIR) apply --directory lvgl $(LVGL_BINDING_DIR)/patch/fix_GC.patch || true
+endif
+
 # MicroPython feature configurations
 MICROPY_ROM_TEXT_COMPRESSION ?= 1
 
@@ -357,6 +386,10 @@ ifeq ($(MICROPY_SSL_MBEDTLS),1)
 LIB_SRC_C += mbedtls/mbedtls_port.c
 endif
 
+ifeq ($(MICROPY_PY_LVGL),1)
+LIB_SRC_C += $(LVGL_MPY)
+endif
+
 ifeq ($(MICROPY_PY_BLUETOOTH),1)
 SRC_C += mpbthciport.c
 endif
@@ -568,7 +601,11 @@ $(PY_BUILD)/formatfloat.o: COPT += -Os
 $(PY_BUILD)/parsenum.o: COPT += -Os
 $(PY_BUILD)/mpprint.o: COPT += -Os
 
+ifeq ($(MICROPY_PY_LVGL),1)
+all: $(TOP)/lib/fsp/README.md LVGL_patch $(BUILD)/firmware.hex $(BUILD)/firmware.bin
+else
 all: $(TOP)/lib/fsp/README.md $(BUILD)/firmware.hex $(BUILD)/firmware.bin
+endif
 
 # For convenience, automatically fetch required submodules if they don't exist
 $(TOP)/lib/fsp/README.md:

@@ -17,7 +17,11 @@
 #define MICROPY_PY_NETWORK_HOSTNAME_DEFAULT MICROPY_HW_BOARD_NAME
 
 #define MODULE_LCD_ENABLED          (1)
+#if defined(MICROPY_PY_LVGL) && (MICROPY_PY_LVGL == 1)
+#define MODULE_CAM_ENABLED          (0)
+#else
 #define MODULE_CAM_ENABLED          (1)
+#endif
 
 // peripheral config
 #define MICROPY_HW_ENABLE_RNG       (1)
